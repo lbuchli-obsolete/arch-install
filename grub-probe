@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# grub-probe is a bit useless, so here's a faker script replacing it (it expects the original at /bin/grub-probe.orig)
+
+if [[ $1 -eq "--target=device" ]]; then
+  case $2 in
+  /)
+  echo "zroot/ROOT/default"
+  ;;
+  /boot*)
+  echo "zroot/BOOT/default"
+  /home*)
+  echo "zroot/data/home"
+  ;;
+  *)
+  /bin/grub-probe.orig "$@"
+  ;;
+  esac
+else
+  /bin/grub-probe.orig "$@"
+fi
