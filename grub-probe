@@ -9,6 +9,7 @@ if [[ $1 -eq "--target=device" ]]; then
   ;;
   /boot*)
   echo "zroot/BOOT/default"
+  ;;
   /home*)
   echo "zroot/data/home"
   ;;
