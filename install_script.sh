@@ -167,6 +167,10 @@ sed -i "/HOOKS=/c$hooks" /mnt/etc/mkinitcpio.conf
 # Regenerate initramfs
 arch-chroot /mnt mkinitcpio -P
 
+# Use the faker script for grub-probe
+mv /mnt/bin/grub-probe /mnt/bin/grub-probe.orig
+cp grub-probe /mnt/bin
+
 # GRUB sanity check
 arch-chroot /mnt grub-probe /boot
 
