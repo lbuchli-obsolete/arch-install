@@ -19,13 +19,7 @@ if [[ "$1" == '--target=device' ]]; then
   esac
 else
   case $1 in
-  /)
-  echo "zfs"
-  ;;
-  /boot)
-  echo "zfs"
-  ;;
-  /home)
+  / | /boot | /home)
   echo "zfs"
   ;;
   *)
