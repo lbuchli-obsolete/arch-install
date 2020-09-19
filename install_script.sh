@@ -170,6 +170,7 @@ arch-chroot /mnt mkinitcpio -P
 # Use the faker script for grub-probe
 mv /mnt/bin/grub-probe /mnt/bin/grub-probe.orig
 cp grub-probe /mnt/bin
+chmod +x /mnt/bin/grub-probe
 
 # GRUB sanity check
 arch-chroot /mnt grub-probe /boot
