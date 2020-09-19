@@ -177,7 +177,7 @@ chmod +x /mnt/bin/grub-probe.orig
 arch-chroot /mnt grub-probe /boot
 
 # Configure GRUB
-dev_uuid=$(find /mnt/dev/disk/by-uuid/ -lname "*/nvme0n1p3")
+dev_uuid=$(find /dev/disk/by-uuid/ -lname "*/nvme0n1p3")
 kernel_default_params='GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3"'
 kernel_params="GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=$dev_uuid:crypt root=ZFS=zroot/ROOT/default\""
 sed -i "/GRUB_CMDLINE_LINUX_DEFAULT/c$kernel_default_params" /mnt/etc/default/grub
@@ -186,7 +186,7 @@ cat >> /mnt/etc/default/grub << 'EOF'
 GRUB_ENABLE_CRYPTODISK=y
 GRUB_TERMINAL_OUTPUT=console
 EOF
-arch-chroot /mnt export ZPOOL_VDEV_NAME_PATH=1 
+arch-chroot /mnt ZPOOL_VDEV_NAME_PATH=1 
 arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 
 # Configure grub.cfg
