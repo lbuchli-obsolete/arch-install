@@ -98,10 +98,6 @@ zpool import -d /dev/disk/by-id -R /mnt zroot -N
 # Make root locatable
 zpool set bootfs=zroot/ROOT/default zroot
 
-# Copy cache
-zpool set cachefile=/etc/zfs/zpool.cache zroot
-cp /etc/zfs/zpool.cache /mnt/etc/zfs/zpool.cache
-
 # Mount partitions
 zfs mount zroot/ROOT/default
 zfs mount -a
@@ -110,6 +106,10 @@ mount /dev/nvme0n1p2 /mnt/efi
 
 # Install essential packages
 pacstrap /mnt base linux linux-firmware vim grub efibootmgr
+
+# Copy cache
+zpool set cachefile=/etc/zfs/zpool.cache zroot
+cp /etc/zfs/zpool.cache /mnt/etc/zfs/zpool.cache
 
 # Generate /etc/fstab
 genfstab -U -p /mnt >> /mnt/etc/fstab
