@@ -171,6 +171,7 @@ arch-chroot /mnt mkinitcpio -P
 mv /mnt/bin/grub-probe /mnt/bin/grub-probe.orig
 cp grub-probe /mnt/bin
 chmod +x /mnt/bin/grub-probe
+chmod +x /mnt/bin/grub-probe.orig
 
 # GRUB sanity check
 arch-chroot /mnt grub-probe /boot
