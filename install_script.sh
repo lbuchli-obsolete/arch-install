@@ -132,14 +132,14 @@ arch-chroot /mnt locale-gen
 # Network configuration
 echo -n "Hostname: "; read hostname
 echo $hostname > /mnt/etc/hostname
-echo <<EOF > /mnt/etc/hosts
+cat > /mnt/etc/hosts << EOF
 127.0.0.1	localhost
 ::1		localhost
 127.0.1.1	$hostname.localdomain	$hostname
 EOF
 
 # Add ZFS repos to pacman
-echo << 'EOF' >> /mnt/etc/pacman.conf
+cat >> /mnt/etc/pacman.conf << 'EOF'
 [archzfs]
 # Origin Server - France
 Server = http://archzfs.com/$repo/x86_64
@@ -173,7 +173,7 @@ kernel_default_params='GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3"'
 kernel_params="GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=$dev_uuid:crypt root=ZFS=zroot/ROOT/default\""
 sed -i "/GRUB_CMDLINE_LINUX_DEFAULT/c$kernel_default_params" /mnt/etc/default/grub
 sed -i "/GRUB_CMDLINE_LINUX/c$kernel_params" /mnt/etc/default/grub
-echo <<EOF >> /mnt/etc/default/grub
+cat >> /mnt/etc/default/grub << 'EOF'
 GRUB_ENABLE_CRYPTODISK=y
 GRUB_TERMINAL_OUTPUT=console
 EOF
@@ -181,7 +181,7 @@ arch-chroot /mnt export ZPOOL_VDEV_NAME_PATH=1
 arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 
 # Configure grub.cfg
-echo << 'EOF' >> /mnt/boot/grub/grub.cfg
+cat >> /mnt/boot/grub/grub.cfg << 'EOF'
 set timeout=5
 set default=0
 
