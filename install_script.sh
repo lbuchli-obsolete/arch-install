@@ -100,8 +100,9 @@ zpool import -d /dev/disk/by-id -R /mnt zroot -N
 # Make root locatable
 zpool set bootfs=zroot/ROOT/default zroot
 
-# Remove mysterious home dir :D
+# Remove dirs kindly but unnesserarily created by zfs-util
 rmdir /mnt/home
+rmdir /mnt/boot
 
 # Mount partitions
 zfs mount zroot/ROOT/default
