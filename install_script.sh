@@ -155,7 +155,7 @@ Server = http://end.re/$repo/
 EOF
 
 # Chroot
-arch-chroot /mnt pacman -S zfs-linux
+arch-chroot /mnt pacman -Sy zfs-linux
 
 # Edit mkinitcpio hooks
 hooks='HOOKS=(base udev autodetect keyboard keymap consolefont modconf block encrypt zfs filesystems fsck)'
