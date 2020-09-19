@@ -139,7 +139,7 @@ echo <<EOF > /mnt/etc/hosts
 EOF
 
 # Add ZFS repos to pacman
-cat <<EOF >>
+echo << 'EOF' >> /mnt/etc/pacman.conf
 [archzfs]
 # Origin Server - France
 Server = http://archzfs.com/$repo/x86_64
@@ -181,7 +181,7 @@ arch-chroot /mnt export ZPOOL_VDEV_NAME_PATH=1
 arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 
 # Configure grub.cfg
-echo <<EOF >> /mnt/boot/grub/grub.cfg
+echo << 'EOF' >> /mnt/boot/grub/grub.cfg
 set timeout=5
 set default=0
 
