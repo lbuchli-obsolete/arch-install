@@ -186,7 +186,7 @@ cat >> /mnt/etc/default/grub << 'EOF'
 GRUB_ENABLE_CRYPTODISK=y
 GRUB_TERMINAL_OUTPUT=console
 EOF
-arch-chroot /mnt ZPOOL_VDEV_NAME_PATH=1 
+ZPOOL_VDEV_NAME_PATH=1 
 arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 
 # Configure grub.cfg
