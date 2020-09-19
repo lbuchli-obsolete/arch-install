@@ -112,6 +112,7 @@ pacstrap /mnt base linux linux-firmware vim grub efibootmgr
 
 # Copy cache
 zpool set cachefile=/etc/zfs/zpool.cache zroot
+mkdir /mnt/etc/zfs
 cp /etc/zfs/zpool.cache /mnt/etc/zfs/zpool.cache
 
 # Generate /etc/fstab
