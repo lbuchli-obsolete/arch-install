@@ -162,7 +162,7 @@ hooks='HOOKS=(base udev autodetect keyboard keymap consolefont modconf block enc
 sed -i "/HOOKS=/c$hooks" /mnt/etc/mkinitcpio.conf
 
 # Regenerate initramfs
-arch-chroot /mnt mkinitcpio
+arch-chroot /mnt mkinitcpio -P
 
 # GRUB sanity check
 arch-chroot /mnt grub-probe /boot
