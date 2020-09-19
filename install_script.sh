@@ -120,7 +120,7 @@ genfstab -U -p /mnt >> /mnt/etc/fstab
 
 # Configure system
 ln -sf /mnt/usr/share/zoneinfo/Europe/Zurich /mnt/etc/localtime
-arch-chroot /mnt 'hwclock --systohc'
+arch-chroot /mnt hwclock --systohc
 echo "LANG=en_US.UTF-8" > /mnt/etc/locale.conf
 echo "KEYMAP=de_CH-latin1" > /mnt/etc/vconsole.conf
 
@@ -155,7 +155,7 @@ Server = http://end.re/$repo/
 EOF
 
 # Chroot
-arch-chroot /mnt 'pacman -S zfs-linux'
+arch-chroot /mnt pacman -S zfs-linux
 
 # Edit mkinitcpio hooks
 hooks='HOOKS=(base udev autodetect keyboard keymap consolefont modconf block encrypt zfs filesystems fsck)'
@@ -165,7 +165,7 @@ sed -i "/HOOKS=/c$hooks" /mnt/etc/mkinitcpio.conf
 arch-chroot /mnt mkinitcpio
 
 # GRUB sanity check
-arch-chroot /mnt 'grub-probe /boot'
+arch-chroot /mnt grub-probe /boot
 
 # Configure GRUB
 dev_uuid=$(find /mnt/dev/disk/by-uuid/ -lname "*/nvme0n1p3")
@@ -177,7 +177,8 @@ echo <<EOF >> /mnt/etc/default/grub
 GRUB_ENABLE_CRYPTODISK=y
 GRUB_TERMINAL_OUTPUT=console
 EOF
-arch-chroot /mnt 'ZPOOL_VDEV_NAME_PATH=1 grub-mkconfig -o /boot/grub/grub.cfg'
+arch-chroot /mnt export ZPOOL_VDEV_NAME_PATH=1 
+arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 
 # Configure grub.cfg
 echo <<EOF >> /mnt/boot/grub/grub.cfg
@@ -192,7 +193,7 @@ menuentry "Arch Linux" {
 EOF
 
 # Install GRUB (for EFI)
-arch-chroot /mnt 'grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB --recheck'
+arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB --recheck
 
 # Unmount stuff
 umount /mnt/efi
@@ -203,7 +204,7 @@ umount -R /mnt
 # TODO cryptboot?
 
 # Set root password
-arch-chroot /mnt 'passwd'
+arch-chroot /mnt passwd
 
 # Finish message
 echo "DONE! You may restart now."
