@@ -51,6 +51,9 @@ cryptsetup luksFormat --type luks1 /dev/nvme0n1p3
 # Open it (asks again)
 cryptsetup open /dev/nvme0n1p3 crypt
 
+# Install ZFS utils
+curl -s https://eoli3n.github.io/archzfs/init | bash
+
 # Make a ZFS pool
 zpool create -d -f -o feature@allocation_classes=enabled \
                    -o feature@async_destroy=enabled      \
