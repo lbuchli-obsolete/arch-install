@@ -43,7 +43,7 @@ sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk /dev/nvme0n1
 EOF
 
 # Format the EFI partition
-mkfs.ext4 /dev/nvme0n1p2
+mkfs.fat -F 32 /dev/nvme0n1p2
 
 # Encrypt the root partition (asks for a password)
 cryptsetup luksFormat --type luks1 /dev/nvme0n1p3
@@ -168,10 +168,10 @@ sed -i "/HOOKS=/c$hooks" /mnt/etc/mkinitcpio.conf
 arch-chroot /mnt mkinitcpio -P
 
 # Use the faker script for grub-probe
-mv /mnt/bin/grub-probe /mnt/bin/grub-probe.orig
-cp grub-probe /mnt/bin
-chmod +x /mnt/bin/grub-probe
-chmod +x /mnt/bin/grub-probe.orig
+#mv /mnt/bin/grub-probe /mnt/bin/grub-probe.orig
+#cp grub-probe /mnt/bin
+#chmod +x /mnt/bin/grub-probe
+#chmod +x /mnt/bin/grub-probe.orig
 
 # GRUB sanity check
 arch-chroot /mnt grub-probe /boot
@@ -187,6 +187,7 @@ GRUB_ENABLE_CRYPTODISK=y
 GRUB_TERMINAL_OUTPUT=console
 EOF
 ZPOOL_VDEV_NAME_PATH=1 
+mkdir /mnt/boot/grub
 arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 
 # Configure grub.cfg
