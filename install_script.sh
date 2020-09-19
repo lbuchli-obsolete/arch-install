@@ -87,8 +87,10 @@ zpool create -d -f -o feature@allocation_classes=enabled \
 
 # Create ZFS datasets
 zfs create -o mountpoint=none zroot/data
+zfs create -o mountpoint=none zroot/BOOT
 zfs create -o mountpoint=none zroot/ROOT
 zfs create -o mountpoint=/ -o canmount=noauto zroot/ROOT/default
+zfs create -o mountpoint=/boot -o canmount=on zroot/BOOT/default
 zfs create -o mountpoint=/home zroot/data/home
 
 # Validate ZFS config
