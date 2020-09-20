@@ -174,9 +174,9 @@ arch-chroot /mnt mkinitcpio -P
 #chmod +x /mnt/bin/grub-probe.orig
 
 # Bind system directories
-mount --bind /sys /mnt/sys
-mount --bind /proc /mnt/proc
-mount --bind /dev /mnt/dev
+mount --rbind /sys /mnt/sys
+mount --rbind /proc /mnt/proc
+mount --rbind /dev /mnt/dev
 
 # Install GRUB (for EFI)
 chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB --recheck
@@ -215,9 +215,9 @@ chroot /mnt passwd
 
 # Unmount stuff
 umount /mnt/efi
-umount /mnt/sys
-umount /mnt/proc
-umount /mnt/dev
+umount -R /mnt/sys
+umount -R /mnt/proc
+umount -R /mnt/dev
 zfs umount -a
 zpool export zroot
 umount -R /mnt
