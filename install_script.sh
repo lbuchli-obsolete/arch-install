@@ -55,21 +55,21 @@ mkfs.fat -F 32 /dev/nvme0n1p2
 curl -s https://eoli3n.github.io/archzfs/init | bash
 
 # Make a ZFS pool
-zpool create -d -f -o ashift=9               \
-                   -O acltype=posixacl       \
-                   -O relatime=on            \
-                   -O xattr=sa               \
-                   -O dnodesize=legacy       \
-                   -O normalization=formD    \
-                   -O mountpoint=none        \
-                   -O canmount=off           \
-                   -O devices=off            \
-                   -R /mnt                   \
-                   -O compression=lz4        \
-		   -O encryption=aes-256-gcm \
-		   -O keyformat=passphrase   \
-		   -O keylocation=prompt     \
-                   zroot /dev/disk/by-id/nvme-SAMSUNG*-part2
+zpool create -f -o ashift=9               \
+                -O acltype=posixacl       \
+                -O relatime=on            \
+                -O xattr=sa               \
+                -O dnodesize=legacy       \
+                -O normalization=formD    \
+                -O mountpoint=none        \
+                -O canmount=off           \
+                -O devices=off            \
+                -R /mnt                   \
+                -O compression=lz4        \
+		-O encryption=aes-256-gcm \
+		-O keyformat=passphrase   \
+		-O keylocation=prompt     \
+                zroot /dev/disk/by-id/nvme-SAMSUNG*-part2
 
 # Create ZFS datasets
 zfs create -o mountpoint=none zroot/data
