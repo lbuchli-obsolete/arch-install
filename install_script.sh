@@ -179,10 +179,10 @@ mount --bind /proc /mnt/proc
 mount --bind /dev /mnt/dev
 
 # Install GRUB (for EFI)
-arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB --recheck
+chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB --recheck
 
 # GRUB sanity check
-arch-chroot /mnt grub-probe /boot
+chroot /mnt grub-probe /boot
 
 # Configure GRUB
 dev_uuid=$(find /dev/disk/by-uuid/ -lname "*/nvme0n1p3")
@@ -196,7 +196,7 @@ GRUB_TERMINAL_OUTPUT=console
 EOF
 ZPOOL_VDEV_NAME_PATH=1 
 mkdir /mnt/boot/grub
-arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 
 # Configure grub.cfg
 cat >> /mnt/boot/grub/grub.cfg << 'EOF'
@@ -210,16 +210,19 @@ menuentry "Arch Linux" {
 }
 EOF
 
+# Set root password
+chroot /mnt passwd
+
 # Unmount stuff
 umount /mnt/efi
+umount /mnt/sys
+umount /mnt/proc
+umount /mnt/dev
 zfs umount -a
 zpool export zroot
 umount -R /mnt
 
 # TODO cryptboot?
-
-# Set root password
-arch-chroot /mnt passwd
 
 # Finish message
 echo "DONE! You may restart now."
