@@ -49,6 +49,10 @@ mkfs.fat -F 32 /dev/nvme0n1p2
 # Install ZFS utils
 curl -s https://eoli3n.github.io/archzfs/init | bash
 
+# Clear previous zfs pools
+rm -rf /etc/zfs/zpool.d
+mkfs.ext4 /dev/nvme0n1p3
+
 # Make a ZFS pool
 zpool create -f -o ashift=9               \
                 -O acltype=posixacl       \
