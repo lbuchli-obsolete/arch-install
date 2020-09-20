@@ -67,7 +67,7 @@ zpool create -f -o ashift=9               \
                 zroot /dev/disk/by-id/nvme-SAMSUNG*-part3
 
 # Load key
-zfs load-key zroot
+zfs load-key zroot || true
 
 # Create ZFS datasets
 zfs create -o mountpoint=none zroot/data
