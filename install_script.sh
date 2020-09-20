@@ -16,6 +16,7 @@ timedatectl set-ntp true
 # Partition the disk
 sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk /dev/nvme0n1
   o # clear the in memory partition table
+  g # make a gpt table
   n #### new partition
   p # primary partition
   1 # partition number 1
@@ -44,12 +45,6 @@ EOF
 
 # Format the EFI/Boot partition
 mkfs.fat -F 32 /dev/nvme0n1p2
-
-# Encrypt the root partition (asks for a password)
-#cryptsetup luksFormat --type luks1 /dev/nvme0n1p3
-
-# Open it (asks again)
-#cryptsetup open /dev/nvme0n1p3 crypt
 
 # Install ZFS utils
 curl -s https://eoli3n.github.io/archzfs/init | bash
