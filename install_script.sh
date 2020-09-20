@@ -28,51 +28,34 @@ sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk /dev/nvme0n1
   p # primary partition
   2 # partion number 2
     # default, start immediately after preceding partition
-  +1G # 1GB EFI partition (This is probably overkill, but better be safe than sorry)
+  +1G # 2GB EFI+Boot partition
   t # change type
   2 # of partition 2
   1 # to 'EFI System'
   n #### new partition
   p # primary partition
   3 # partition number 3
-    # default - start after BIOS Boot partition
+    # default - start after Boot partition
     # default - fill all free space
   p # print the in-memory partition table
   w # write the partition table
   q # and we're done
 EOF
 
-# Format the EFI partition
+# Format the EFI/Boot partition
 mkfs.fat -F 32 /dev/nvme0n1p2
 
 # Encrypt the root partition (asks for a password)
-cryptsetup luksFormat --type luks1 /dev/nvme0n1p3
+#cryptsetup luksFormat --type luks1 /dev/nvme0n1p3
 
 # Open it (asks again)
-cryptsetup open /dev/nvme0n1p3 crypt
+#cryptsetup open /dev/nvme0n1p3 crypt
 
 # Install ZFS utils
 curl -s https://eoli3n.github.io/archzfs/init | bash
 
 # Make a ZFS pool
-zpool create -d -f -o feature@allocation_classes=enabled \
-                   -o feature@async_destroy=enabled      \
-                   -o feature@bookmarks=enabled          \
-                   -o feature@embedded_data=enabled      \
-                   -o feature@empty_bpobj=enabled        \
-                   -o feature@enabled_txg=enabled        \
-                   -o feature@extensible_dataset=enabled \
-                   -o feature@filesystem_limits=enabled  \
-                   -o feature@hole_birth=enabled         \
-                   -o feature@large_blocks=enabled       \
-                   -o feature@lz4_compress=enabled       \
-                   -o feature@project_quota=enabled      \
-                   -o feature@resilver_defer=enabled     \
-                   -o feature@spacemap_histogram=enabled \
-                   -o feature@spacemap_v2=enabled        \
-                   -o feature@userobj_accounting=enabled \
-                   -o feature@zpool_checkpoint=enabled   \
-		   -o ashift=9                           \
+zpool create -d -f -o ashift=9               \
                    -O acltype=posixacl       \
                    -O relatime=on            \
                    -O xattr=sa               \
@@ -83,14 +66,15 @@ zpool create -d -f -o feature@allocation_classes=enabled \
                    -O devices=off            \
                    -R /mnt                   \
                    -O compression=lz4        \
-                   zroot /dev/disk/by-id/dm-uuid-CRYPT-LUKS1-*
+		   -O encryption=aes-256-gcm \
+		   -O keyformat=passphrase   \
+		   -O keylocation=prompt     \
+                   zroot /dev/disk/by-id/nvme-SAMSUNG*-part2
 
 # Create ZFS datasets
 zfs create -o mountpoint=none zroot/data
-zfs create -o mountpoint=none zroot/BOOT
 zfs create -o mountpoint=none zroot/ROOT
 zfs create -o mountpoint=/ -o canmount=noauto zroot/ROOT/default
-zfs create -o mountpoint=/boot -o canmount=on zroot/BOOT/default
 zfs create -o mountpoint=/home zroot/data/home
 
 # Validate ZFS config
@@ -100,18 +84,17 @@ zpool import -d /dev/disk/by-id -R /mnt zroot -N
 # Make root locatable
 zpool set bootfs=zroot/ROOT/default zroot
 
-# Remove dirs kindly but unnesserarily created by zfs-util
+# Remove dir kindly but unnesserarily created by zfs-util
 rmdir /mnt/home
-rmdir /mnt/boot
 
 # Mount partitions
 zfs mount zroot/ROOT/default
 zfs mount -a
-mkdir /mnt/efi
-mount /dev/nvme0n1p2 /mnt/efi
+mkdir /mnt/boot
+mount /dev/nvme0n1p2 /mnt/boot
 
 # Install essential packages
-pacstrap /mnt base linux linux-firmware vim grub efibootmgr
+pacstrap /mnt base linux linux-firmware vim refind efibootmgr
 
 # Copy cache
 zpool set cachefile=/etc/zfs/zpool.cache zroot
@@ -124,12 +107,12 @@ genfstab -U -p /mnt >> /mnt/etc/fstab
 # Configure system
 ln -sf /mnt/usr/share/zoneinfo/Europe/Zurich /mnt/etc/localtime
 arch-chroot /mnt hwclock --systohc
-echo "LANG=en_US.UTF-8" > /mnt/etc/locale.conf
 echo "KEYMAP=de_CH-latin1" > /mnt/etc/vconsole.conf
 
 # Configure locale
 sed -i '/en_US.UTF-8 UTF-8/s/^#//g' /mnt/etc/locale.gen
 sed -i '/de_CH.UTF-8 UTF-8/s/^#//g' /mnt/etc/locale.gen
+echo "LANG=en_US.UTF-8" > /mnt/etc/locale.conf
 arch-chroot /mnt locale-gen
 
 # Network configuration
@@ -158,57 +141,22 @@ Server = http://end.re/$repo/
 EOF
 
 # Chroot
-arch-chroot /mnt pacman -Sy zfs-linux
+arch-chroot /mnt pacman -Sy --noconfirm zfs-linux
 
 # Edit mkinitcpio hooks
-hooks='HOOKS=(base udev autodetect keyboard keymap consolefont modconf block encrypt zfs filesystems fsck)'
+hooks='HOOKS=(base udev autodetect keyboard keymap consolefont modconf block zfs filesystems fsck)'
 sed -i "/HOOKS=/c$hooks" /mnt/etc/mkinitcpio.conf
 
 # Regenerate initramfs
 arch-chroot /mnt mkinitcpio -P
-
-# Use the faker script for grub-probe
-#mv /mnt/bin/grub-probe /mnt/bin/grub-probe.orig
-#cp grub-probe /mnt/bin
-#chmod +x /mnt/bin/grub-probe
-#chmod +x /mnt/bin/grub-probe.orig
 
 # Bind system directories
 mount --rbind /sys /mnt/sys
 mount --rbind /proc /mnt/proc
 mount --rbind /dev /mnt/dev
 
-# Install GRUB (for EFI)
-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB --recheck
-
-# GRUB sanity check
-chroot /mnt grub-probe /boot
-
-# Configure GRUB
-dev_uuid=$(find /dev/disk/by-uuid/ -lname "*/nvme0n1p3")
-kernel_default_params='GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3"'
-kernel_params="GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=$dev_uuid:crypt root=ZFS=zroot/ROOT/default\""
-sed -i "/GRUB_CMDLINE_LINUX_DEFAULT/c$kernel_default_params" /mnt/etc/default/grub
-sed -i "/GRUB_CMDLINE_LINUX/c$kernel_params" /mnt/etc/default/grub
-cat >> /mnt/etc/default/grub << 'EOF'
-GRUB_ENABLE_CRYPTODISK=y
-GRUB_TERMINAL_OUTPUT=console
-EOF
-ZPOOL_VDEV_NAME_PATH=1 
-mkdir /mnt/boot/grub
-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
-
-# Configure grub.cfg
-cat >> /mnt/boot/grub/grub.cfg << 'EOF'
-set timeout=5
-set default=0
-
-menuentry "Arch Linux" {
-    search -u UUID
-    linux /ROOT/default/@/boot/vmlinuz-linux zfs=zroot/ROOT/default rw
-    initrd /ROOT/default/@/boot/initramfs-linux.img
-}
-EOF
+# Install rEFInd (for EFI)
+chroot /mnt refind-install
 
 # Set root password
 chroot /mnt passwd
