@@ -173,6 +173,9 @@ arch-chroot /mnt mkinitcpio -P
 #chmod +x /mnt/bin/grub-probe
 #chmod +x /mnt/bin/grub-probe.orig
 
+# Install GRUB (for EFI)
+arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB --recheck
+
 # GRUB sanity check
 arch-chroot /mnt grub-probe /boot
 
@@ -201,9 +204,6 @@ menuentry "Arch Linux" {
     initrd /ROOT/default/@/boot/initramfs-linux.img
 }
 EOF
-
-# Install GRUB (for EFI)
-arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB --recheck
 
 # Unmount stuff
 umount /mnt/efi
