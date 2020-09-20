@@ -64,7 +64,10 @@ zpool create -f -o ashift=9               \
 		-O encryption=aes-256-gcm \
 		-O keyformat=passphrase   \
 		-O keylocation=prompt     \
-                zroot /dev/disk/by-id/nvme-SAMSUNG*-part2
+                zroot /dev/disk/by-id/nvme-SAMSUNG*-part3
+
+# Load key
+zfs load-key zroot
 
 # Create ZFS datasets
 zfs create -o mountpoint=none zroot/data
