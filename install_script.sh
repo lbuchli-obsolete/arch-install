@@ -174,6 +174,7 @@ arch-chroot /mnt mkinitcpio -P
 #chmod +x /mnt/bin/grub-probe.orig
 
 # Install GRUB (for EFI)
+ln -sf /dev /mnt/dev
 arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB --recheck
 
 # GRUB sanity check
