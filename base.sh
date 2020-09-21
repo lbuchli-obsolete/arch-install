@@ -15,27 +15,15 @@ timedatectl set-ntp true
 
 # Partition the disk
 sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk /dev/nvme0n1
-  o # clear the in memory partition table
   g # make a gpt table
   n #### new partition
   p # primary partition
   1 # partition number 1
     # default - start at beginning of disk 
-  +1M # 1MB BIOS Boot for GRUB
-  t # change type
-  1 # for partition number 1
-  4 # to 'BIOS Boot'
-  n # new partition
-  p # primary partition
-  2 # partion number 2
-    # default, start immediately after preceding partition
-  +1G # 2GB EFI+Boot partition
-  t # change type
-  2 # of partition 2
-  1 # to 'EFI System'
+  +8G # Boot/EFI partition
   n #### new partition
   p # primary partition
-  3 # partition number 3
+  2 # partition number 3
     # default - start after Boot partition
     # default - fill all free space
   p # print the in-memory partition table
@@ -44,14 +32,14 @@ sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk /dev/nvme0n1
 EOF
 
 # Format the EFI/Boot partition
-mkfs.fat -F 32 /dev/nvme0n1p2
+mkfs.fat -F 32 /dev/nvme0n1p1
 
 # Install ZFS utils
 curl -s https://eoli3n.github.io/archzfs/init | bash
 
 # Clear previous zfs pools
 rm -rf /etc/zfs/zpool.d
-mkfs.ext4 /dev/nvme0n1p3
+mkfs.ext4 /dev/nvme0n1p2
 
 # Make a ZFS pool
 zpool create -f -o ashift=9               \
@@ -65,10 +53,10 @@ zpool create -f -o ashift=9               \
                 -O devices=off            \
                 -R /mnt                   \
                 -O compression=lz4        \
-		-O encryption=aes-256-gcm \
-		-O keyformat=passphrase   \
-		-O keylocation=prompt     \
-                zroot /dev/disk/by-id/nvme-SAMSUNG*-part3
+                -O encryption=aes-256-gcm \
+                -O keyformat=passphrase   \
+                -O keylocation=prompt     \
+                zroot /dev/disk/by-id/nvme-SAMSUNG*-part2
 
 # Load key
 zfs load-key zroot || true
@@ -93,10 +81,10 @@ rmdir /mnt/home
 zfs mount zroot/ROOT/default
 zfs mount -a
 mkdir /mnt/boot
-mount /dev/nvme0n1p2 /mnt/boot
+mount /dev/nvme0n1p1 /mnt/boot
 
 # Install essential packages
-pacstrap /mnt base linux linux-firmware vim refind efibootmgr
+pacstrap /mnt base linux linux-firmware vim grub efibootmgr zsh
 
 # Copy cache
 zpool set cachefile=/etc/zfs/zpool.cache zroot
@@ -157,11 +145,25 @@ mount --rbind /sys /mnt/sys
 mount --rbind /proc /mnt/proc
 mount --rbind /dev /mnt/dev
 
-# Install rEFInd (for EFI)
-chroot /mnt refind-install
+# Install grub (for EFI)
+chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB --recheck
+
+# Configure grub
+kernel_params="GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=$dev_uuid:crypt root=ZFS=zroot/ROOT/default\""
+sed -i "/GRUB_CMDLINE_LINUX/c$kernel_params" /mnt/etc/default/grub
+ZPOOL_VDEV_NAME_PATH=1 
+mkdir /mnt/boot/grub
+chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 
 # Set root password
+echo "Root password:"
 chroot /mnt passwd
+
+# Add other user
+echo "> New user"
+echo -n "Name: "; read name
+useradd -G wheel -s /usr/bin/zsh -d /home/$name $name
+passwd $name
 
 # Unmount stuff
 umount /mnt/efi
@@ -172,7 +174,10 @@ zfs umount -a
 zpool export zroot
 umount -R /mnt
 
-# TODO cryptboot?
-
 # Finish message
-echo "DONE! You may restart now."
+echo "DONE!"
+echo -n "Do you want to continue with the GUI? [Y/n]"; read continue
+if [[ -z "$continue" || "$continue" == "Y" || "$continue" == "y" ]]; then
+  chmod +x gui.sh
+  chroot /mnt gui.sh $name
+fi
