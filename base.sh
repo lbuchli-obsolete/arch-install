@@ -47,7 +47,7 @@ rm -rf /etc/zfs/zpool.d
 mkfs.ext4 /dev/nvme0n1p2
 
 # Make a ZFS pool
-echo "${CYAN}Setting up ZFS pool...${NC}"
+print -P "${CYAN}Setting up ZFS pool...${NC}"
 zpool create -f -o ashift=9               \
                 -O acltype=posixacl       \
                 -O relatime=on            \
@@ -58,33 +58,33 @@ zpool create -f -o ashift=9               \
                 -O canmount=off           \
                 -O devices=off            \
                 -R /mnt                   \
-                -O compression=lz4        \
-                -O encryption=aes-256-gcm \
-                -O keyformat=passphrase   \
-                -O keylocation=prompt     \
                 zroot /dev/disk/by-id/nvme-SAMSUNG*-part2
 
 # Create ZFS datasets
-zfs create -o mountpoint=none zroot/data
-zfs create -o mountpoint=none zroot/ROOT
-zfs create -o mountpoint=/ -o canmount=noauto zroot/ROOT/default
+zfs create -o mountpoint=none        \
+           -O compression=lz4        \
+           -O encryption=aes-256-gcm \
+           -O keyformat=passphrase   \
+           -O keylocation=prompt     \
+           zroot/data
+zfs create -o mountpoint=/ -o canmount=noauto zroot/data/ROOT
 zfs create -o mountpoint=/home zroot/data/home
 
 # Load key
-zfs load-key -r zroot || true
+zfs load-key -r zroot/data
 
 # Validate ZFS config
 zpool export zroot
 zpool import -d /dev/disk/by-id -R /mnt zroot -N
 
 # Make root locatable
-zpool set bootfs=zroot/ROOT/default zroot
+zpool set bootfs=zroot/data/ROOT zroot
 
 # Remove dir kindly but unnesserarily created by zfs-util
 rmdir /mnt/home || true
 
 # Mount partitions
-zfs mount zroot/ROOT/default
+zfs mount zroot/data/ROOT
 zfs mount -a
 mkdir /mnt/boot
 mount /dev/nvme0n1p1 /mnt/boot
@@ -159,7 +159,7 @@ print -P "${CYAN}Installing GRUB...${NC}"
 chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB --recheck
 
 # Configure grub
-kernel_params="GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=$dev_uuid:crypt root=ZFS=zroot/ROOT/default\""
+kernel_params="GRUB_CMDLINE_LINUX=\"root=ZFS=zroot/data/ROOT\""
 sed -i "/GRUB_CMDLINE_LINUX/c$kernel_params" /mnt/etc/default/grub
 ZPOOL_VDEV_NAME_PATH=1 
 mkdir /mnt/boot/grub
