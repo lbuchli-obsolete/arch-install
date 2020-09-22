@@ -3,23 +3,23 @@
 # This is an arch linux installation script, intended to do my system installation.
 # You can use it yourself, but you'll probably have to customize it a bit.
 
-CYAN='\033[0;36m'
-NC='\033[0m' # No Color
+CYAN='%F{cyan}'
+NC='%f' # No Color
 
 # Fail on error
 set -uo pipefail
 trap 's=$?; echo "$0: Error on line "$LINENO": $BASH_COMMAND"; exit $s' ERR
 
 # Set keyboard map to swiss german
-echo "${CYAN}Setting keyboard layout...${NC}"
+print -P "${CYAN}Setting keyboard layout...${NC}"
 loadkeys de_CH-latin1
 
 # Update system clock
-echo "${CYAN}Updating system clock...${NC}"
+print -P "${CYAN}Updating system clock...${NC}"
 timedatectl set-ntp true
 
 # Partition the disk
-echo "${CYAN}Partitioning the disks...${NC}"
+print -P "${CYAN}Partitioning the disks...${NC}"
 sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk /dev/nvme0n1
   g # make a gpt table
   n #### new partition
@@ -41,7 +41,7 @@ EOF
 mkfs.fat -F 32 /dev/nvme0n1p1
 
 # Install ZFS utils
-echo "${CYAN}Installing ZFS utils...${NC}"
+print -P "${CYAN}Installing ZFS utils...${NC}"
 curl -s https://eoli3n.github.io/archzfs/init | bash
 
 # Clear previous zfs pools
@@ -92,10 +92,10 @@ mkdir /mnt/boot
 mount /dev/nvme0n1p1 /mnt/boot
 
 # Install essential packages
-echo "${CYAN}Installing base packages...${NC}"
+print -P "${CYAN}Installing base packages...${NC}"
 pacstrap /mnt base linux linux-firmware vim grub efibootmgr zsh
 
-echo "${CYAN}Configuring system...${NC}"
+print -P "${CYAN}Configuring system...${NC}"
 
 # Copy cache
 zpool set cachefile=/etc/zfs/zpool.cache zroot
@@ -157,7 +157,7 @@ mount --rbind /proc /mnt/proc
 mount --rbind /dev /mnt/dev
 
 # Install grub (for EFI)
-echo "${CYAN}Installing GRUB...${NC}"
+print -P "${CYAN}Installing GRUB...${NC}"
 chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB --recheck
 
 # Configure grub
@@ -168,7 +168,7 @@ mkdir /mnt/boot/grub
 chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 
 # Set root password
-echo "${CYAN}Setting up users...${NC}"
+print -P "${CYAN}Setting up users...${NC}"
 echo "Root password:"
 chroot /mnt passwd
 
@@ -179,7 +179,7 @@ useradd -G wheel -s /usr/bin/zsh -d /home/$name $name
 passwd $name
 
 # Finish message
-echo "${CYAN}DONE!NC}"
+print -P "${CYAN}DONE!${NC}"
 echo -n "Do you want to continue with the GUI? [Y/n]"; read continue
 if [[ -z "$continue" || "$continue" == "Y" || "$continue" == "y" ]]; then
   chmod +x gui.sh
@@ -187,7 +187,7 @@ if [[ -z "$continue" || "$continue" == "Y" || "$continue" == "y" ]]; then
 fi
 
 # Unmount stuff
-echo "${CYAN}Unmounting system...NC}"
+print -P "${CYAN}Unmounting system...${NC}"
 umount /mnt/efi
 umount -R /mnt/sys
 umount -R /mnt/proc
