@@ -62,10 +62,10 @@ zpool create -f -o ashift=9               \
 
 # Create ZFS datasets
 zfs create -o mountpoint=none        \
-           -O compression=lz4        \
-           -O encryption=aes-256-gcm \
-           -O keyformat=passphrase   \
-           -O keylocation=prompt     \
+           -o compression=lz4        \
+           -o encryption=aes-256-gcm \
+           -o keyformat=passphrase   \
+           -o keylocation=prompt     \
            zroot/data
 zfs create -o mountpoint=/ -o canmount=noauto zroot/data/ROOT
 zfs create -o mountpoint=/home zroot/data/home
