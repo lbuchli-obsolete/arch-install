@@ -1,5 +1,5 @@
 
-#!/usr/bin/zsh
+#!/usr/bin/zsh -e
 
 name=$1
 CYAN='%F{cyan}'

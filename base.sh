@@ -1,14 +1,10 @@
-#!/usr/bin/zsh
+#!/usr/bin/zsh -e
 
 # This is an arch linux installation script, intended to do my system installation.
 # You can use it yourself, but you'll probably have to customize it a bit.
 
 CYAN='%F{cyan}'
 NC='%f' # No Color
-
-# Fail on error
-set -uo pipefail
-trap 's=$?; echo "$0: Error on line "$LINENO": $BASH_COMMAND"; exit $s' ERR
 
 # Set keyboard map to swiss german
 print -P "${CYAN}Setting keyboard layout...${NC}"
