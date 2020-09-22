@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/zsh
 
 # This is an arch linux installation script, intended to do my system installation.
 # You can use it yourself, but you'll probably have to customize it a bit.

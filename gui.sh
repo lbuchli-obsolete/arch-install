@@ -1,5 +1,5 @@
 
-#!/bin/bash
+#!/usr/bin/zsh
 
 name=$1
 CYAN='%F{cyan}'
