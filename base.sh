@@ -70,12 +70,12 @@ zfs create -o mountpoint=none        \
 zfs create -o mountpoint=/ -o canmount=noauto zroot/data/ROOT
 zfs create -o mountpoint=/home zroot/data/home
 
-# Load key
-zfs load-key -r zroot/data
-
 # Validate ZFS config
 zpool export zroot
 zpool import -d /dev/disk/by-id -R /mnt zroot -N
+
+# Load key
+zfs load-key -r zroot/data
 
 # Make root locatable
 zpool set bootfs=zroot/data/ROOT zroot
