@@ -1,10 +1,12 @@
-#!/usr/bin/zsh -e
+#!/usr/bin/zsh
 
 # This is an arch linux installation script, intended to do my system installation.
 # You can use it yourself, but you'll probably have to customize it a bit.
 
 CYAN='%F{cyan}'
 NC='%f' # No Color
+
+set -e
 
 # Set keyboard map to swiss german
 print -P "${CYAN}Setting keyboard layout...${NC}"
@@ -25,7 +27,7 @@ sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk /dev/nvme0n1
   +8G # Boot/EFI partition
   n #### new partition
   p # primary partition
-  2 # partition number 3
+  2 # partition number 2
     # default - start after Boot partition
     # default - fill all free space
   p # print the in-memory partition table

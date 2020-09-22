@@ -1,9 +1,10 @@
-
-#!/usr/bin/zsh -e
+#!/usr/bin/zsh
 
 name=$1
 CYAN='%F{cyan}'
 NC='%f' # No Color
+
+set -e
 
 print -P "${CYAN}Installing packages...${NC}"
 pacman -S --noconfirm gnome firefox emacs gnome-tweaks sudo lightdm
