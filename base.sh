@@ -8,6 +8,9 @@ NC='%f' # No Color
 
 set -e # Pipefail
 
+print -P "${CYAN}Installing utility packages...${NC}"
+pacman -Sy --noconfirm inotify-tools
+
 # Set keyboard map to swiss german
 print -P "${CYAN}Setting keyboard layout...${NC}"
 loadkeys de_CH-latin1
@@ -37,6 +40,11 @@ sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk $disk
   w # write the partition table
   q # and we're done
 EOF
+
+# Wait for creation of partitions
+if [[ ! -e  $(echo $disk(p|)1) ]]; then
+  inotifywait -e create /dev/
+fi
 
 # Format the EFI/Boot partition
 mkfs.fat -F 32 $disk(p|)1
@@ -169,7 +177,7 @@ chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloa
 kernel_params="GRUB_CMDLINE_LINUX=\"root=ZFS=zroot/data/ROOT\""
 sed -i "/GRUB_CMDLINE_LINUX/c$kernel_params" /mnt/etc/default/grub
 ZPOOL_VDEV_NAME_PATH=1 
-mkdir /mnt/boot/grub
+mkdir /mnt/boot/grub || true
 chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 
 # Set root password
