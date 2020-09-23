@@ -23,14 +23,13 @@ if [[ -z "$disk" ]]; then
   disk=/dev/nvme0n1
 fi
 sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk $disk
+  
   g # make a gpt table
   n #### new partition
-  p # primary partition
   1 # partition number 1
     # default - start at beginning of disk 
   +8G # Boot/EFI partition
   n #### new partition
-  p # primary partition
   2 # partition number 2
     # default - start after Boot partition
     # default - fill all free space
@@ -40,14 +39,14 @@ sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk $disk
 EOF
 
 # Format the EFI/Boot partition
-mkfs.fat -F 32 /dev/$disk(p|)1
+mkfs.fat -F 32 $disk(p|)1
 
 # Install ZFS utils
 print -P "${CYAN}Installing ZFS utils...${NC}"
 curl -s https://eoli3n.github.io/archzfs/init | bash
 
 # Clear previous zfs pools
-zfsdisk=$(echo /dev/$disk(p|)2)
+zfsdisk=$(echo $disk(p|)2)
 rm -rf /etc/zfs/zpool.d
 mkfs.ext4 $zfsdisk
 
@@ -94,7 +93,7 @@ rmdir /mnt/home || true
 zfs mount zroot/data/ROOT
 zfs mount -a
 mkdir /mnt/boot
-mount /dev/$disk(p|)1 /mnt/boot
+mount $disk(p|)1 /mnt/boot
 
 # Install essential packages
 print -P "${CYAN}Installing base packages...${NC}"
