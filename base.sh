@@ -6,7 +6,7 @@
 CYAN='%F{cyan}'
 NC='%f' # No Color
 
-set -e
+set -e # Pipefail
 
 # Set keyboard map to swiss german
 print -P "${CYAN}Setting keyboard layout...${NC}"
@@ -18,7 +18,11 @@ timedatectl set-ntp true
 
 # Partition the disk
 print -P "${CYAN}Partitioning the disks...${NC}"
-sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk /dev/nvme0n1
+echo -n "Disk to partition (/dev/nvme0n1): "; read disk
+if [[ -z "$disk" ]]; then
+  disk=/dev/nvme0n1
+fi
+sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk $disk
   g # make a gpt table
   n #### new partition
   p # primary partition
@@ -36,18 +40,21 @@ sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk /dev/nvme0n1
 EOF
 
 # Format the EFI/Boot partition
-mkfs.fat -F 32 /dev/nvme0n1p1
+mkfs.fat -F 32 /dev/$disk(p|)1
 
 # Install ZFS utils
 print -P "${CYAN}Installing ZFS utils...${NC}"
 curl -s https://eoli3n.github.io/archzfs/init | bash
 
 # Clear previous zfs pools
+zfsdisk=$(echo /dev/$disk(p|)2)
 rm -rf /etc/zfs/zpool.d
-mkfs.ext4 /dev/nvme0n1p2
+mkfs.ext4 $zfsdisk
 
 # Make a ZFS pool
 print -P "${CYAN}Setting up ZFS pool...${NC}"
+zfsdiskbn=$(basename $zfsdisk)
+zfsdiskid=$(find /dev/disk/by-id -lname "../../$zfsdiskbn" -printf "%p\n" -quit)
 zpool create -f -o ashift=9               \
                 -O acltype=posixacl       \
                 -O relatime=on            \
@@ -58,7 +65,7 @@ zpool create -f -o ashift=9               \
                 -O canmount=off           \
                 -O devices=off            \
                 -R /mnt                   \
-                zroot /dev/disk/by-id/nvme-SAMSUNG*-part2
+                zroot $zfsdiskid
 
 # Create ZFS datasets
 zfs create -o mountpoint=none        \
@@ -87,7 +94,7 @@ rmdir /mnt/home || true
 zfs mount zroot/data/ROOT
 zfs mount -a
 mkdir /mnt/boot
-mount /dev/nvme0n1p1 /mnt/boot
+mount /dev/$disk(p|)1 /mnt/boot
 
 # Install essential packages
 print -P "${CYAN}Installing base packages...${NC}"
