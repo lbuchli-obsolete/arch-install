@@ -107,7 +107,7 @@ mount -t zfs vault/$hostname/home /mnt/home
 
 # Install essential packages
 print -P "${CYAN}Installing base packages...${NC}"
-pacstrap /mnt base linux linux-firmware vim zsh
+pacstrap /mnt base linux linux-firmware vim zsh dhcpcd iwd man
 
 print -P "${CYAN}Configuring system...${NC}"
 
