@@ -25,7 +25,7 @@ echo -n "Disk to partition (/dev/nvme0n1): "; read disk
 if [[ -z "$disk" ]]; then
   disk=/dev/nvme0n1
 fi
-sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk $disk
+sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' <<EOF | fdisk $disk
   
   g # make a gpt table
   n #### new partition
@@ -72,7 +72,9 @@ zpool create -f -o ashift=9               \
                 -O canmount=off           \
                 -O devices=off            \
                 -R /mnt                   \
-                zroot $zfsdiskid
+                vault $zfsdiskid
+
+echo -n "Hostname: "; read hostname
 
 # Create ZFS datasets
 zfs create -o mountpoint=none        \
@@ -80,32 +82,32 @@ zfs create -o mountpoint=none        \
            -o encryption=aes-256-gcm \
            -o keyformat=passphrase   \
            -o keylocation=prompt     \
-           zroot/data
-zfs create -o mountpoint=/ -o canmount=noauto zroot/data/ROOT
-zfs create -o mountpoint=/home zroot/data/home
+           vault/$hostname
+zfs create -o mountpoint=none -p vault/$hostname/ROOT
+zfs create -o mountpoint=/ vault/$hostname/ROOT/default
+zfs create -o mountpoint=/home vault/$hostname/home
 
 # Validate ZFS config
 zpool export zroot
-zpool import -d /dev/disk/by-id -R /mnt zroot -N
+zpool import -d /dev/disk/by-id -R /mnt vault -N
 
 # Load key
-zfs load-key -r zroot/data
+zfs load-key -r vault/$hostname
 
 # Make root locatable
-zpool set bootfs=zroot/data/ROOT zroot
+zpool set bootfs=vault/$hostname/ROOT/default vault
 
 # Remove dir kindly but unnesserarily created by zfs-util
 rmdir /mnt/home || true
 
 # Mount partitions
-zfs mount zroot/data/ROOT
 zfs mount -a
 mkdir /mnt/boot
 mount $disk(p|)1 /mnt/boot
 
 # Install essential packages
 print -P "${CYAN}Installing base packages...${NC}"
-pacstrap /mnt base linux linux-firmware vim grub efibootmgr zsh
+pacstrap /mnt base linux linux-firmware vim zsh
 
 print -P "${CYAN}Configuring system...${NC}"
 
@@ -129,7 +131,6 @@ echo "LANG=en_US.UTF-8" > /mnt/etc/locale.conf
 arch-chroot /mnt locale-gen
 
 # Network configuration
-echo -n "Hostname: "; read hostname
 echo $hostname > /mnt/etc/hostname
 cat > /mnt/etc/hosts << EOF
 127.0.0.1	localhost
@@ -138,7 +139,7 @@ cat > /mnt/etc/hosts << EOF
 EOF
 
 # Add ZFS repos to pacman
-cat >> /mnt/etc/pacman.conf << 'EOF'
+cat >> /mnt/etc/pacman.conf <<'EOF'
 [archzfs]
 # Origin Server - France
 Server = http://archzfs.com/$repo/x86_64
@@ -168,17 +169,10 @@ mount --rbind /sys /mnt/sys
 mount --rbind /proc /mnt/proc
 mount --rbind /dev /mnt/dev
 
-# Install grub (for EFI)
-print -P "${CYAN}Installing GRUB...${NC}"
-mkdir /mnt/boot/efi
-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB --recheck
-
-# Configure grub
-kernel_params="GRUB_CMDLINE_LINUX=\"root=ZFS=zroot/data/ROOT\""
-sed -i "/GRUB_CMDLINE_LINUX/c$kernel_params" /mnt/etc/default/grub
-ZPOOL_VDEV_NAME_PATH=1 
-mkdir /mnt/boot/grub || true
-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+# Install systemd-boot (for EFI)
+print -P "${CYAN}Installing Bootloader...${NC}"
+chroot /mnt bootctl --path /boot install
+cat >> /boot/loader/entries/arch.conf " zfs=vault/perth/ROOT/default"
 
 # Set root password
 print -P "${CYAN}Setting up users...${NC}"
@@ -188,7 +182,7 @@ chroot /mnt passwd
 # Add other user
 echo "> New user"
 echo -n "Name: "; read name
-useradd -G wheel -s /usr/bin/zsh -d /home/$name $name
+useradd -m -G wheel -s /usr/bin/zsh $name
 passwd $name
 
 # Finish message
@@ -206,5 +200,8 @@ umount -R /mnt/sys
 umount -R /mnt/proc
 umount -R /mnt/dev
 zfs umount -a
-zpool export zroot
+zpool export vault
 umount -R /mnt
+
+print -P "${CYAN}DONE!${NC}"
+print -P "${CYAN}Remember to follow the https://ramsdenj.com/2016/06/23/arch-linux-on-zfs-part-2-installation.html on tasks to to after startup.${NC}"
