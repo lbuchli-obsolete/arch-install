@@ -26,7 +26,6 @@ if [[ -z "$disk" ]]; then
   disk=/dev/nvme0n1
 fi
 sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' <<EOF | fdisk $disk
-  
   g # make a gpt table
   n #### new partition
   1 # partition number 1
@@ -174,7 +173,12 @@ mount --rbind /dev /mnt/dev
 # Install systemd-boot (for EFI)
 print -P "${CYAN}Installing Bootloader...${NC}"
 chroot /mnt bootctl --path /boot install
-cat >> /boot/loader/entries/arch.conf " zfs=vault/perth/ROOT/default"
+cat > /mnt/boot/loader/entries/arch.conf <<EOF
+title     Arch Linux (Perth)
+linux     /vmlinuz-linux
+initrd    /initramfs-linux.img
+options   zfs=vault/$hostname/ROOT/default rw
+EOF
 
 # Set root password
 print -P "${CYAN}Setting up users...${NC}"
