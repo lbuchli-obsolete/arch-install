@@ -52,7 +52,7 @@ mkfs.fat -F 32 $disk(p|)1
 
 # Install ZFS utils
 print -P "${CYAN}Installing ZFS utils...${NC}"
-curl -s https://eoli3n.github.io/archzfs/init | bash
+curl -s --retry 10 https://eoli3n.github.io/archzfs/init | bash
 
 # Clear previous zfs pools
 zfsdisk=$(echo $disk(p|)2)
@@ -86,7 +86,7 @@ zfs create -o mountpoint=none        \
            vault/$hostname
 zfs create -o mountpoint=none -p vault/$hostname/ROOT
 zfs create -o mountpoint=/ vault/$hostname/ROOT/default
-zfs create -o mountpoint=/home vault/$hostname/home
+zfs create -o mountpoint=legacy vault/$hostname/home
 
 # Validate ZFS config
 zpool export vault
@@ -98,13 +98,12 @@ zfs load-key -r vault/$hostname
 # Make root locatable
 zpool set bootfs=vault/$hostname/ROOT/default vault
 
-# Remove dir kindly but unnesserarily created by zfs-util
-rmdir /mnt/home || true
-
 # Mount partitions
 zfs mount -a
-mkdir /mnt/boot
+mkdir /mnt/boot || true
 mount $disk(p|)1 /mnt/boot
+mkdir /mnt/home || true
+mount -t zfs vault/$hostname/home /mnt/home
 
 # Install essential packages
 print -P "${CYAN}Installing base packages...${NC}"
@@ -196,18 +195,18 @@ print -P "${CYAN}DONE!${NC}"
 echo -n "Do you want to continue with the GUI? [Y/n]"; read continue
 if [[ -z "$continue" || "$continue" == "Y" || "$continue" == "y" ]]; then
   chmod +x gui.sh
-  chroot /mnt gui.sh $name
+  cp gui.sh /mnt/tmp/
+  chroot /mnt /tmp/gui.sh $name || true
 fi
 
 # Unmount stuff
 print -P "${CYAN}Unmounting system...${NC}"
-umount /mnt/efi
-umount -R /mnt/sys
-umount -R /mnt/proc
-umount -R /mnt/dev
-zfs umount -a
+umount -R /mnt/sys || true
+umount -R /mnt/proc || true
+umount -R /mnt/dev || true
+zfs umount -a || true
 zpool export vault
-umount -R /mnt
+umount -R /mnt || true
 
 print -P "${CYAN}DONE!${NC}"
 print -P "${CYAN}Remember to follow the https://ramsdenj.com/2016/06/23/arch-linux-on-zfs-part-2-installation.html on tasks to to after startup.${NC}"
