@@ -32,6 +32,8 @@ sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' <<EOF | fdisk $disk
   1 # partition number 1
     # default - start at beginning of disk 
   +8G # Boot/EFI partition
+  t # change type
+  1 # to EFI 
   n #### new partition
   2 # partition number 2
     # default - start after Boot partition
