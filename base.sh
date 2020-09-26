@@ -88,7 +88,7 @@ zfs create -o mountpoint=/ vault/$hostname/ROOT/default
 zfs create -o mountpoint=/home vault/$hostname/home
 
 # Validate ZFS config
-zpool export zroot
+zpool export vault
 zpool import -d /dev/disk/by-id -R /mnt vault -N
 
 # Load key
@@ -112,7 +112,7 @@ pacstrap /mnt base linux linux-firmware vim zsh
 print -P "${CYAN}Configuring system...${NC}"
 
 # Copy cache
-zpool set cachefile=/etc/zfs/zpool.cache zroot
+zpool set cachefile=/etc/zfs/zpool.cache vault
 mkdir /mnt/etc/zfs
 cp /etc/zfs/zpool.cache /mnt/etc/zfs/zpool.cache
 
